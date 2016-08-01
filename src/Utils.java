@@ -3,6 +3,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -12,19 +13,102 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class Utils
 {
+    public static PrintStream p = null;
     public static boolean ArquivoExiste(String caminho){
         
         boolean existe = (new File(caminho)).exists();   
         return existe;
     } 
     
+    public static void  escreveTxt(String Arquivo, String Texto, boolean append) {
+        FileOutputStream arquivoSaida = null;
+        if(append) {
+            try {
+                arquivoSaida = new FileOutputStream (Arquivo,true);
+            } catch (FileNotFoundException e) {
+                // TODO Auto-generated catch block
+                System.out.println("Erro append arquivo ou caminho Inexistente:"+pegarHora()+" " +e.toString());
+                if(e.toString().contains("sendo usado por outro processo")){
+                    System.out.println("Erro append arquivo Sendo Usado"+pegarHora()+" " +e.toString());
+                }
+                try {
+                    arquivoSaida = new FileOutputStream (Arquivo);
+                } catch (FileNotFoundException e1) {
+                    // TODO Auto-generated catch block
+                    System.out.println("Erro append arquivo Sendo Usado:"+pegarHora()+" " +e.toString());
+                }
+            }
+        }
+        else {//não é append
+            try {
+                arquivoSaida = new FileOutputStream (Arquivo);
+            } catch (FileNotFoundException e) {
+                System.out.println("Erro arquivo ou caminho Inexistente:"+pegarHora()+" " +e.toString());
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+        
+        
+        try {
+            FileChannel channel = arquivoSaida.getChannel();
+            FileLock lock = channel.tryLock();
+            
+            if(lock==null){
+                System.out.println("Arquivo Esta Bloqueado "+pegarHora()+" ");
+            }else{
+                //grava
+                try {
+                    p = new  PrintStream ( arquivoSaida );
+                    p.print(Texto);
+                    lock.release();
+                    p.close();
+                } catch (Exception e) {
+                    System.out.println("Erro PrintStream "+pegarHora()+" " + e.toString());
+                }
+                
+                try {
+                    
+                    arquivoSaida.close();
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+        
+    }
     
+    
+    @SuppressWarnings("deprecation")
+    public static String pegarData2() {
+           String Data;
+           Date cal = new Date();
+           SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy");
+           Data = DATE_FORMAT.format(cal);
+           return Data;
+       }
+    
+    @SuppressWarnings("deprecation")
+    public static String pegarHora() {
+           String Data;
+           Date cal = new Date();
+           SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("HH:mm:ss");
+           Data = DATE_FORMAT.format(cal);
+           return Data;
+       }
     public static File[] ListaDiretorio(String Caminho, String Extensoes){
 
             File diretorio = new File(Caminho);

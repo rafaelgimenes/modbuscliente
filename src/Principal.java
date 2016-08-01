@@ -1,5 +1,4 @@
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 import net.wimpi.modbus.io.ModbusTCPTransaction;
 import net.wimpi.modbus.msg.WriteMultipleRegistersRequest;
@@ -21,9 +20,7 @@ public class Principal {
         Configuracoes[] configuracoes = null;
         //pegando os valores
         try {
-            //192.168.25.5 502 0 R1F90,R1F70 1539,0.444
-            //
-            //                 
+            //192.168.1.2 502 0 R1F6000,R1F6001,R2B6002,R2F6004,R2F6006,R2F6008,R1F6010 00033,1,1657.6,8.99,0.456,0.123,0
             ip = args[0];
             porta = Integer.parseInt(args [1]);
             offsetRegistros=Integer.parseInt(args[2]);
@@ -32,7 +29,7 @@ public class Principal {
             
             //se os valores e configuraçoes nao batem, já mata o processo.
             if(configArgs.length!=valores.length) {
-                System.out.println("Configuration and values sizes does not match");
+                Utils.escreveTxt("modbusClienteErroSeparandoArgs.txt","\n"+Utils.pegarData2()+" "+Utils.pegarHora()+"\nValues sizes does not match",true);
                 System.exit(1);
             }
             
@@ -48,11 +45,14 @@ public class Principal {
                     fOrdem=false;
                 }
                 int fEnderecoIni = Integer.parseInt(configArgs[i].substring(3,configArgs[i].length()));
-                configuracoes[i]=new Configuracoes(fTipo,fqtdeReg , fOrdem,fEnderecoIni );
+                configuracoes[i]=new Configuracoes(fTipo,fqtdeReg,fOrdem,fEnderecoIni);
             } 
             
            
         } catch (Exception e2) {
+            StackTraceElement l = e2.getStackTrace()[0];
+            String erro = l.getClassName()+"/"+l.getMethodName()+":"+l.getLineNumber()+" "+l.getFileName()+e2.getMessage() +""+ e2.getStackTrace();
+            Utils.escreveTxt("modbusClienteErroSeparandoArgs.txt","\n"+Utils.pegarData2()+" "+Utils.pegarHora() + " " +erro+"", true);
             // TODO Auto-generated catch block
             e2.printStackTrace();
             System.exit(1);
@@ -64,132 +64,84 @@ public class Principal {
             con.setPort(porta);
             con.setTimeout(1000);
             con.connect();
-        } catch (UnknownHostException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            StackTraceElement l = e.getStackTrace()[0];
+            String erro = l.getClassName()+"/"+l.getMethodName()+":"+l.getLineNumber()+" "+l.getFileName()+e.getMessage() +""+ e.getStackTrace();
+            Utils.escreveTxt("modbusClienteErroConexao.txt","\n"+Utils.pegarData2()+" "+Utils.pegarHora() + " " +erro+"", true);
         }
        
         //trantando os dados.
-        
-        for (int i = 0; i < valores.length; i++) {
-            if(configuracoes[i].getTipo().equals("R")) {//tipo registros;
-                Register[] registros = new Register[configuracoes[i].getQtdReg()];
-                int enderecoIni = offsetRegistros+configuracoes[i].getEnderecoInicial();
-                if(registros.length==1) {//1 registro uma WORD inteiro direto
-                    //tratando casas
-                    int qtdeCasas=0;
-                    int mult=1;
-                    int valorEnv=0;
-                    double valorEnD=0.0d;
-                    if(valores[i].contains(".")) {
-                        qtdeCasas = valores[i].substring(valores[i].lastIndexOf(".") + 1).length();
-                        if(qtdeCasas==1)mult=10;
-                        if(qtdeCasas==2)mult=100;
-                        if(qtdeCasas==3)mult=1000;
-                        valorEnD = Double.parseDouble(valores[i]);
-                        valorEnD = valorEnD*mult;
-                        valorEnv=(int) valorEnD;
-                    }else {
-                        valorEnv=Integer.parseInt(valores[i]);
-                    }
-                    registros[0] = new SimpleRegister(valorEnv);
-                    WriteMultipleRegistersRequest request = new WriteMultipleRegistersRequest(enderecoIni,registros);
-                    System.out.println("request: "+request.getHexMessage());
-                    ModbusTCPTransaction trans = new ModbusTCPTransaction(con);
-                    trans.setRequest(request);
-                    try {
-                        trans.execute();
-                    } catch (Exception e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                    WriteMultipleRegistersResponse response = new WriteMultipleRegistersResponse();
-                    response = (WriteMultipleRegistersResponse) trans.getResponse();
-                    System.out.println("response:"+response.getHexMessage() + "WordCount:"+response.getWordCount());
-                }else if(registros.length==2) {//2 registro 2 words
-                    byte[] valorB = null;
-                    float valorX = Float.parseFloat(valores[i]);
-                    boolean ordem = configuracoes[i].ordemBytes; 
-                    valorB = Utils.getBytesFromFloat((float)valorX, ordem);
-                    //
-                    registros[0] = new SimpleRegister(valorB[2],valorB[3]);
-                    registros[1] = new SimpleRegister(valorB[0],valorB[1]);
-                    
-                    WriteMultipleRegistersRequest request = new WriteMultipleRegistersRequest(enderecoIni,registros);
-                    System.out.println("request: "+request.getHexMessage());
-                    ModbusTCPTransaction trans = new ModbusTCPTransaction(con);
-                    trans.setRequest(request);
-                    try {
-                        trans.execute();
-                    } catch (Exception e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                    WriteMultipleRegistersResponse response = new WriteMultipleRegistersResponse();
-                    response = (WriteMultipleRegistersResponse) trans.getResponse();
-                    System.out.println("response:"+response.getHexMessage() + "WordCount:"+response.getWordCount());
-                    
-                }
-                
-            }
-            
-        }
-     
-        /**
-        double temp = 1433.99;
-        int ref = 30;
-        byte[] tempB = null;
-        tempB = Utils.getBytesFromFloat((float)temp, false);
-        Register[] registros = new Register[10];
-        
-        //quebrando o valor de temperatura em 2 words 4bytes
-          Register reg = new SimpleRegister(tempB[0],tempB[1]);
-        Register reg2 = new SimpleRegister(tempB[2],tempB[3]);
-        Register reg3 = new SimpleRegister(tempB[0],tempB[3]);
-        
-        registros[0] = new SimpleRegister(tempB[0],tempB[1]);
-        registros[1] = new SimpleRegister(tempB[2],tempB[3]);
-        registros[2] = new SimpleRegister(0);
-        registros[3] = new SimpleRegister(0);
-        registros[4] = new SimpleRegister(0);
-        registros[5] = new SimpleRegister(0);
-        registros[6] = new SimpleRegister(0);
-        registros[7] = new SimpleRegister(0);
-        registros[8] = new SimpleRegister(0);
-        registros[9] = new SimpleRegister(0);
-        
-        //quando tratata-se de um WriteMultipleRequest ele já começa no endereço 4000, então se o endereço/ref for 10 na verdade é 4010
-        //WriteMultipleRegistersRequest request = new WriteMultipleRegistersRequest(ref,new Register[]{reg,reg2,reg3});
-        WriteMultipleRegistersRequest request = new WriteMultipleRegistersRequest(ref,registros);
-        System.out.println("request: "+request.getHexMessage());
-        
-        //4. Prepare the transaction
-        ModbusTCPTransaction trans = new ModbusTCPTransaction(con);
-        //trans.setRequest(ReadReq);
-        trans.setRequest(request);
-        
         try {
-            //aqui realmente que faz a gravação
-            trans.execute();
-        } catch (ModbusIOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        } catch (ModbusSlaveException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        } catch (ModbusException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
+            if (valores!=null&&configuracoes!=null) {
+                for (int i = 0; i < valores.length; i++) {
+                    if(configuracoes[i].getTipo().equals("R")) {//tipo registros;
+                        Register[] registros = new Register[configuracoes[i].getQtdReg()];
+                        int enderecoIni = offsetRegistros+configuracoes[i].getEnderecoInicial();
+                        if(registros.length==1) {//1 registro uma WORD inteiro direto
+                            //tratando casas
+                            int qtdeCasas=0;
+                            int mult=1;
+                            int valorEnv=0;
+                            double valorEnD=0.0d;
+                            valores[i]=valores[i].replaceAll("[^0-9.]", "");
+                            if(valores[i].contains(".")) {
+                                qtdeCasas = valores[i].substring(valores[i].lastIndexOf(".") + 1).length();
+                                if(qtdeCasas==1)mult=10;
+                                if(qtdeCasas==2)mult=100;
+                                if(qtdeCasas==3)mult=1000;
+                                valorEnD = Double.parseDouble(valores[i]);
+                                valorEnD = valorEnD*mult;
+                                valorEnv=(int) valorEnD;
+                            }else {
+                                valorEnv=Integer.parseInt(valores[i]);
+                            }
+                            registros[0] = new SimpleRegister(valorEnv);
+                            WriteMultipleRegistersRequest request = new WriteMultipleRegistersRequest(enderecoIni,registros);
+                            System.out.println("request: "+request.getHexMessage());
+                            ModbusTCPTransaction trans = new ModbusTCPTransaction(con);
+                            trans.setRequest(request);
+                            try {
+                                trans.execute();
+                            } catch (Exception e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+                            WriteMultipleRegistersResponse response = new WriteMultipleRegistersResponse();
+                            response = (WriteMultipleRegistersResponse) trans.getResponse();
+                            System.out.println("response:"+response.getHexMessage() + "WordCount:"+response.getWordCount());
+                        }else if(registros.length==2) {//2 registro 2 words
+                            byte[] valorB = null;
+                            valores[i]=valores[i].replaceAll("[^0-9.]", "");//remove caracteres
+                            float valorX = Float.parseFloat(valores[i]);
+                            boolean ordem = configuracoes[i].ordemBytes; 
+                            //passa pra bytes
+                            valorB = Utils.getBytesFromFloat((float)valorX, ordem);
+                            //divide em 2 registros
+                            registros[0] = new SimpleRegister(valorB[2],valorB[3]);
+                            registros[1] = new SimpleRegister(valorB[0],valorB[1]);
+                            //cria o request
+                            WriteMultipleRegistersRequest request = new WriteMultipleRegistersRequest(enderecoIni,registros);
+                            System.out.println("request: "+request.getHexMessage());
+                            ModbusTCPTransaction trans = new ModbusTCPTransaction(con);
+                            trans.setRequest(request);
+                            try {
+                                trans.execute();
+                            } catch (Exception e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+                            WriteMultipleRegistersResponse response = new WriteMultipleRegistersResponse();
+                            response = (WriteMultipleRegistersResponse) trans.getResponse();
+                            System.out.println("response:"+response.getHexMessage() + "WordCount:"+response.getWordCount());
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            StackTraceElement l = e.getStackTrace()[0];
+            String erro = l.getClassName()+"/"+l.getMethodName()+":"+l.getLineNumber()+" "+l.getFileName()+e.getMessage() +""+ e.getStackTrace();
+            Utils.escreveTxt("modbusClienteErroTratandoEnviando.txt","\n"+Utils.pegarData2()+" "+Utils.pegarHora() + " " +erro+"", true);
         }
-        
-        // pegando a resposta da transção
-        WriteMultipleRegistersResponse response = new WriteMultipleRegistersResponse();
-        response = (WriteMultipleRegistersResponse) trans.getResponse();
-        System.out.println("response:"+response.getHexMessage() + "WordCount:"+response.getWordCount());
-       */
        
         //fecha a conexão.
         if(con!=null) {
