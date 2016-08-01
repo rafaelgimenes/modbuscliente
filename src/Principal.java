@@ -1,9 +1,6 @@
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import net.wimpi.modbus.ModbusException;
-import net.wimpi.modbus.ModbusIOException;
-import net.wimpi.modbus.ModbusSlaveException;
 import net.wimpi.modbus.io.ModbusTCPTransaction;
 import net.wimpi.modbus.msg.WriteMultipleRegistersRequest;
 import net.wimpi.modbus.msg.WriteMultipleRegistersResponse;
@@ -25,6 +22,7 @@ public class Principal {
         //pegando os valores
         try {
             //192.168.25.5 502 0 R1F90,R1F70 1539,0.444
+            //
             //                 
             ip = args[0];
             porta = Integer.parseInt(args [1]);
@@ -111,12 +109,36 @@ public class Principal {
                     WriteMultipleRegistersResponse response = new WriteMultipleRegistersResponse();
                     response = (WriteMultipleRegistersResponse) trans.getResponse();
                     System.out.println("response:"+response.getHexMessage() + "WordCount:"+response.getWordCount());
-                }//1
+                }else if(registros.length==2) {//2 registro 2 words
+                    byte[] valorB = null;
+                    float valorX = Float.parseFloat(valores[i]);
+                    boolean ordem = configuracoes[i].ordemBytes; 
+                    valorB = Utils.getBytesFromFloat((float)valorX, ordem);
+                    //
+                    registros[0] = new SimpleRegister(valorB[2],valorB[3]);
+                    registros[1] = new SimpleRegister(valorB[0],valorB[1]);
+                    
+                    WriteMultipleRegistersRequest request = new WriteMultipleRegistersRequest(enderecoIni,registros);
+                    System.out.println("request: "+request.getHexMessage());
+                    ModbusTCPTransaction trans = new ModbusTCPTransaction(con);
+                    trans.setRequest(request);
+                    try {
+                        trans.execute();
+                    } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                    WriteMultipleRegistersResponse response = new WriteMultipleRegistersResponse();
+                    response = (WriteMultipleRegistersResponse) trans.getResponse();
+                    System.out.println("response:"+response.getHexMessage() + "WordCount:"+response.getWordCount());
+                    
+                }
                 
             }
             
         }
-        
+     
+        /**
         double temp = 1433.99;
         int ref = 30;
         byte[] tempB = null;
@@ -124,9 +146,9 @@ public class Principal {
         Register[] registros = new Register[10];
         
         //quebrando o valor de temperatura em 2 words 4bytes
-      /*Register reg = new SimpleRegister(tempB[0],tempB[1]);
+          Register reg = new SimpleRegister(tempB[0],tempB[1]);
         Register reg2 = new SimpleRegister(tempB[2],tempB[3]);
-        Register reg3 = new SimpleRegister(tempB[0],tempB[3]);*/
+        Register reg3 = new SimpleRegister(tempB[0],tempB[3]);
         
         registros[0] = new SimpleRegister(tempB[0],tempB[1]);
         registros[1] = new SimpleRegister(tempB[2],tempB[3]);
@@ -167,7 +189,7 @@ public class Principal {
         WriteMultipleRegistersResponse response = new WriteMultipleRegistersResponse();
         response = (WriteMultipleRegistersResponse) trans.getResponse();
         System.out.println("response:"+response.getHexMessage() + "WordCount:"+response.getWordCount());
-       
+       */
        
         //fecha a conexão.
         if(con!=null) {
