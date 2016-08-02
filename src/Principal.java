@@ -79,7 +79,7 @@ public class Principal {
                             int mult=1;
                             int valorEnv=0;
                             double valorEnD=0.0d;
-                            valores[i]=valores[i].replaceAll("[^0-9.]", "");
+                            valores[i]=valores[i].replaceAll("[^0-9.-]", "");
                             if(valores[i].contains(".")) {
                                 qtdeCasas = valores[i].substring(valores[i].lastIndexOf(".") + 1).length();
                                 if(qtdeCasas==1)mult=10;
@@ -108,7 +108,7 @@ public class Principal {
                         }else if(registros.length==2) {//2 registro 2 words
                             byte[] valorB = null;
                             float valorX=0.0f;
-                            valores[i]=valores[i].replaceAll("[^0-9.]", "");//remove caracteres
+                            valores[i]=valores[i].replaceAll("[^0-9.-]", "");//remove caracteres
                            
                             if(configuracoes[i].getOrdemBytes().equals("F")) {
                                 valorX = Float.parseFloat(valores[i]);
