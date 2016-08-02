@@ -2,7 +2,7 @@
 public class Configuracoes {
     String tipo;
     int qtdReg;
-    boolean ordemBytes;
+    String ordemBytes;
     int enderecoInicial;
     
     public String getTipo() {
@@ -17,10 +17,10 @@ public class Configuracoes {
     public void setQtdReg(int qtdReg) {
         this.qtdReg = qtdReg;
     }
-    public boolean isOrdemBytes() {
+    public String isOrdemBytes() {
         return ordemBytes;
     }
-    public void setOrdemBytes(boolean ordemBytes) {
+    public void setOrdemBytes(String ordemBytes) {
         this.ordemBytes = ordemBytes;
     }
     public int getEnderecoInicial() {
@@ -29,12 +29,15 @@ public class Configuracoes {
     public void setEnderecoInicial(int enderecoInicial) {
         this.enderecoInicial = enderecoInicial;
     }
-    public Configuracoes(String tipo, int qtdReg, boolean ordemBytes,
+    public Configuracoes(String tipo, int qtdReg, String ordemBytes,
             int enderecoInicial) {
         super();
         this.tipo = tipo;
         this.qtdReg = qtdReg;
         this.ordemBytes = ordemBytes;
         this.enderecoInicial = enderecoInicial;
+    }
+    public String getOrdemBytes() {
+        return ordemBytes;
     }
 }

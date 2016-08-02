@@ -38,12 +38,7 @@ public class Principal {
             for (int i = 0; i < configuracoes.length; i++) {
                 String fTipo=configArgs[i].substring(0,1);
                 int fqtdeReg=Integer.parseInt(configArgs[i].substring(1,2));
-                boolean fOrdem;
-                if(configArgs[i].substring(2,3).equals("B")) {
-                    fOrdem=true;
-                }else {
-                    fOrdem=false;
-                }
+                String fOrdem=configArgs[i].substring(2,3);
                 int fEnderecoIni = Integer.parseInt(configArgs[i].substring(3,configArgs[i].length()));
                 configuracoes[i]=new Configuracoes(fTipo,fqtdeReg,fOrdem,fEnderecoIni);
             } 
@@ -112,14 +107,60 @@ public class Principal {
                             System.out.println("response:"+response.getHexMessage() + "WordCount:"+response.getWordCount());
                         }else if(registros.length==2) {//2 registro 2 words
                             byte[] valorB = null;
+                            float valorX=0.0f;
                             valores[i]=valores[i].replaceAll("[^0-9.]", "");//remove caracteres
-                            float valorX = Float.parseFloat(valores[i]);
-                            boolean ordem = configuracoes[i].ordemBytes; 
-                            //passa pra bytes
-                            valorB = Utils.getBytesFromFloat((float)valorX, ordem);
-                            //divide em 2 registros
-                            registros[0] = new SimpleRegister(valorB[2],valorB[3]);
-                            registros[1] = new SimpleRegister(valorB[0],valorB[1]);
+                           
+                            if(configuracoes[i].getOrdemBytes().equals("F")) {
+                                valorX = Float.parseFloat(valores[i]);
+                                //passa pra bytes
+                                valorB = Utils.getBytesFromFloat((float)valorX, false);
+                                //divide em 2 registros
+                                registros[0] = new SimpleRegister(valorB[2],valorB[3]);
+                                registros[1] = new SimpleRegister(valorB[0],valorB[1]);
+                            }else if(configuracoes[i].getOrdemBytes().equals("B")) {
+                                valorX = Float.parseFloat(valores[i]);
+                                //passa pra bytes
+                                valorB = Utils.getBytesFromFloat((float)valorX, true);
+                                //divide em 2 registros
+                                registros[0] = new SimpleRegister(valorB[0],valorB[1]);
+                                registros[1] = new SimpleRegister(valorB[2],valorB[3]);
+                            }else if(configuracoes[i].getOrdemBytes().equals("A")) {
+                                valorX = Float.parseFloat(valores[i]);
+                                //passa pra bytes
+                                valorB = Utils.getBytesFromFloat((float)valorX, false);
+                                //divide em 2 registros
+                                registros[0] = new SimpleRegister(valorB[0],valorB[1]);
+                                registros[1] = new SimpleRegister(valorB[2],valorB[3]);
+                            }else if(configuracoes[i].getOrdemBytes().equals("C")) {
+                                valorX = Float.parseFloat(valores[i]);
+                                //passa pra bytes
+                                valorB = Utils.getBytesFromFloat((float)valorX, true);
+                                //divide em 2 registros
+                                registros[0] = new SimpleRegister(valorB[2],valorB[3]);
+                                registros[1] = new SimpleRegister(valorB[0],valorB[1]);
+                            }else if(configuracoes[i].getOrdemBytes().equals("D")) {
+                                valorX = Float.parseFloat(valores[i]);
+                                //passa pra bytes
+                                valorB = Utils.getBytesFromFloat((float)valorX, false);
+                                //divide em 2 registros
+                                registros[0] = new SimpleRegister(valorB[0],valorB[1]);
+                                registros[1] = new SimpleRegister(valorB[2],valorB[3]);
+                            }else if(configuracoes[i].getOrdemBytes().equals("E")) {
+                                valorX = Float.parseFloat(valores[i]);
+                                //passa pra bytes
+                                valorB = Utils.getBytesFromFloat((float)valorX, false);
+                                //divide em 2 registros
+                                registros[0] = new SimpleRegister(valorB[3],valorB[2]);
+                                registros[1] = new SimpleRegister(valorB[1],valorB[0]);
+                            }else if(configuracoes[i].getOrdemBytes().equals("G")) {
+                                valorX = Float.parseFloat(valores[i]);
+                                //passa pra bytes
+                                valorB = Utils.getBytesFromFloat((float)valorX, true);
+                                //divide em 2 registros
+                                registros[0] = new SimpleRegister(valorB[3],valorB[2]);
+                                registros[1] = new SimpleRegister(valorB[1],valorB[0]);
+                            }
+                            
                             //cria o request
                             WriteMultipleRegistersRequest request = new WriteMultipleRegistersRequest(enderecoIni,registros);
                             System.out.println("request: "+request.getHexMessage());
