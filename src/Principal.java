@@ -68,6 +68,7 @@ public class Principal {
             StackTraceElement l = e.getStackTrace()[0];
             String erro = l.getClassName()+"/"+l.getMethodName()+":"+l.getLineNumber()+" "+l.getFileName()+e.getMessage() +""+ e.getStackTrace();
             Utils.escreveTxt("modbusClienteErroConexao.txt","\n"+Utils.pegarData2()+" "+Utils.pegarHora() + " " +erro+"", true);
+            System.exit(1);
         }
        
         //trantando os dados.
