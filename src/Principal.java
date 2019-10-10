@@ -11,6 +11,7 @@ import net.wimpi.modbus.procimg.SimpleRegister;
 public class Principal {
 
     public static void main(String[] args) {
+    	String versao = "0.3";
         TCPMasterConnection con=null;
         String ip="";
         int porta=502;
@@ -18,6 +19,16 @@ public class Principal {
         String[] valores = null; //valores das variaveis tem que bater com os valores das configurações.
         int offsetRegistros = 0;
         Configuracoes[] configuracoes = null;
+
+        /*  //passa pra bytes
+        byte[] x = Utils.getBytesFromFloat((float)1562.1, false);
+
+        System.out.println(Utils.getHex(x));
+        System.exit(0);
+        //divide em 2 registros
+         */        
+            
+        System.out.println("ModbusClient:"+versao);
         //pegando os valores
         try {
             //192.168.1.2 502 0 R1F6000,R1F6001,R2B6002,R2F6004,R2F6006,R2F6008,R1F6010 00033,1,1657.6,8.99,0.456,0.123,0
@@ -29,6 +40,7 @@ public class Principal {
             
             //se os valores e configuraçoes nao batem, já mata o processo.
             if(configArgs.length!=valores.length) {
+            	System.out.println("Error: Getting args.");
                 Utils.escreveTxt("modbusClienteErroSeparandoArgs.txt","\n"+Utils.pegarData2()+" "+Utils.pegarHora()+"\nValues sizes does not match",true);
                 System.exit(1);
             }
@@ -48,8 +60,7 @@ public class Principal {
             StackTraceElement l = e2.getStackTrace()[0];
             String erro = l.getClassName()+"/"+l.getMethodName()+":"+l.getLineNumber()+" "+l.getFileName()+e2.getMessage() +""+ e2.getStackTrace();
             Utils.escreveTxt("modbusClienteErroSeparandoArgs.txt","\n"+Utils.pegarData2()+" "+Utils.pegarHora() + " " +erro+"", true);
-            // TODO Auto-generated catch block
-            e2.printStackTrace();
+            System.out.println("Error: Deatach Args");
             System.exit(1);
         }
         
@@ -63,6 +74,7 @@ public class Principal {
             StackTraceElement l = e.getStackTrace()[0];
             String erro = l.getClassName()+"/"+l.getMethodName()+":"+l.getLineNumber()+" "+l.getFileName()+e.getMessage() +""+ e.getStackTrace();
             Utils.escreveTxt("modbusClienteErroConexao.txt","\n"+Utils.pegarData2()+" "+Utils.pegarHora() + " " +erro+"", true);
+            System.out.println("Error: Opening the Connection.");
             System.exit(1);
         }
        
@@ -162,19 +174,19 @@ public class Principal {
                             }
                             
                             //cria o request
-                            WriteMultipleRegistersRequest request = new WriteMultipleRegistersRequest(enderecoIni,registros);
-                            System.out.println("request: "+request.getHexMessage());
-                            ModbusTCPTransaction trans = new ModbusTCPTransaction(con);
-                            trans.setRequest(request);
                             try {
-                                trans.execute();
+                            	WriteMultipleRegistersRequest request = new WriteMultipleRegistersRequest(enderecoIni,registros);
+                            	//System.out.println("request: "+request.getHexMessage());
+                            	ModbusTCPTransaction trans = new ModbusTCPTransaction(con);
+                            	trans.setRequest(request);
+                            	trans.execute();
+                            	WriteMultipleRegistersResponse response = new WriteMultipleRegistersResponse();
+                            	response = (WriteMultipleRegistersResponse) trans.getResponse();
+                            	System.out.println("Written:"+response.getHexMessage() + "WordCount:"+response.getWordCount());
                             } catch (Exception e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
+                            	System.out.println("Error: Writing the values");
                             }
-                            WriteMultipleRegistersResponse response = new WriteMultipleRegistersResponse();
-                            response = (WriteMultipleRegistersResponse) trans.getResponse();
-                            System.out.println("response:"+response.getHexMessage() + "WordCount:"+response.getWordCount());
+                           
                         }
                     }
                 }
@@ -183,6 +195,7 @@ public class Principal {
             StackTraceElement l = e.getStackTrace()[0];
             String erro = l.getClassName()+"/"+l.getMethodName()+":"+l.getLineNumber()+" "+l.getFileName()+e.getMessage() +""+ e.getStackTrace();
             Utils.escreveTxt("modbusClienteErroTratandoEnviando.txt","\n"+Utils.pegarData2()+" "+Utils.pegarHora() + " " +erro+"", true);
+            System.out.println("Error: Handingle the data");
         }
        
         //fecha a conexão.
