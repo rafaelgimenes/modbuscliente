@@ -9,7 +9,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -28,6 +30,37 @@ public class Utils
         return existe;
     } 
     
+    public static String usedAddress = "ss";
+    public static boolean available(int port) {
+        
+
+        ServerSocket ss = null;
+        DatagramSocket ds = null;
+        try {
+            ss = new ServerSocket(port);
+            ss.setReuseAddress(true);
+            ds = new DatagramSocket(port);
+            ds.setReuseAddress(true);
+            usedAddress=ss.getInetAddress()+"";
+            return true;
+        } catch (IOException e) {
+        } finally {
+            if (ds != null) {
+                ds.close();
+            }
+          
+            if (ss != null) {
+            	  usedAddress=ss.getInetAddress()+"";
+                try {
+                    ss.close();
+                } catch (IOException e) {
+                    /* should not be thrown */
+                }
+            }
+        }
+
+        return false;
+    }
     public static void  escreveTxt(String Arquivo, String Texto, boolean append) {
         FileOutputStream arquivoSaida = null;
         if(append) {
