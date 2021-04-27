@@ -1,6 +1,11 @@
 
 public class Configuracoes {
-    String tipo;
+    @Override
+	public String toString() {
+		return "Config [type=" + tipo + ", qtyReg=" + qtdReg + ", byteOrder=" + ordemBytes
+				+ ", initAddress=" + enderecoInicial + "]";
+	}
+	String tipo;
     int qtdReg;
     String ordemBytes;
     int enderecoInicial;
