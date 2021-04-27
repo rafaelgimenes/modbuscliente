@@ -18,7 +18,7 @@ import net.wimpi.modbus.procimg.SimpleRegister;
 public class Principal {
 
 	public static void main(String[] args) {
-		String versao = "0.4a";
+		String versao = "0.5";
 		TCPMasterConnection con=null;
 		String ip="";
 		int porta=502;
@@ -110,112 +110,127 @@ public class Principal {
 			try {
 				if (valores!=null&&configuracoes!=null) {
 					for (int i = 0; i < valores.length; i++) {
-						if(configuracoes[i].getTipo().equals("R")) {//tipo registros;
-							Register[] registros = new Register[configuracoes[i].getQtdReg()];
-							int enderecoIni = offsetRegistros+configuracoes[i].getEnderecoInicial();
-							if(registros.length==1) {//1 registro uma WORD inteiro direto
-								//tratando casas
-								int qtdeCasas=0;
-								int mult=1;
-								int valorEnv=0;
-								double valorEnD=0.0d;
-								valores[i]=valores[i].replaceAll("[^0-9.-]", "");
-								if(valores[i].contains(".")) {
-									qtdeCasas = valores[i].substring(valores[i].lastIndexOf(".") + 1).length();
-									if(qtdeCasas==1)mult=10;
-									if(qtdeCasas==2)mult=100;
-									if(qtdeCasas==3)mult=1000;
-									valorEnD = Double.parseDouble(valores[i]);
-									valorEnD = valorEnD*mult;
-									valorEnv=(int) valorEnD;
-								}else {
-									valorEnv=Integer.parseInt(valores[i]);
-								}
-								registros[0] = new SimpleRegister(valorEnv);
-								WriteMultipleRegistersRequest request = new WriteMultipleRegistersRequest(enderecoIni,registros);
-								System.out.println("request: "+request.getHexMessage());
-								ModbusTCPTransaction trans = new ModbusTCPTransaction(con);
-								trans.setRequest(request);
-								try {
-									trans.execute();
-								} catch (Exception e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								}
-								WriteMultipleRegistersResponse response = new WriteMultipleRegistersResponse();
-								response = (WriteMultipleRegistersResponse) trans.getResponse();
-								System.out.println("response:"+response.getHexMessage() + "WordCount:"+response.getWordCount());
-							}else if(registros.length==2) {//2 registro 2 words
-								byte[] valorB = null;
-								float valorX=0.0f;
-								valores[i]=valores[i].replaceAll("[^0-9.-]", "");//remove caracteres
+						String valorOrig=valores[i] ;
+						try {
+							if (configuracoes[i].getTipo().equals("R")) {//tipo registros;
+								Register[] registros = new Register[configuracoes[i].getQtdReg()];
+								int enderecoIni = offsetRegistros + configuracoes[i].getEnderecoInicial();
+								if (registros.length == 1) {//1 registro uma WORD inteiro direto
+									//tratando casas
+									int qtdeCasas = 0;
+									int mult = 1;
+									int valorEnv = 0;
+									double valorEnD = 0.0d;
+									
+									valores[i] = valores[i].replaceAll("[^0-9.-]", "");
+									if (valores[i].contains(".")) {
+										qtdeCasas = valores[i].substring(valores[i].lastIndexOf(".") + 1).length();
+										if (qtdeCasas == 1)
+											mult = 10;
+										if (qtdeCasas == 2)
+											mult = 100;
+										if (qtdeCasas == 3)
+											mult = 1000;
+										valorEnD = Double.parseDouble(valores[i]);
+										valorEnD = valorEnD * mult;
+										valorEnv = (int) valorEnD;
+									} else {
+										valorEnv = Integer.parseInt(valores[i]);
+									}
+									registros[0] = new SimpleRegister(valorEnv);
+									try {
+										WriteMultipleRegistersRequest request = new WriteMultipleRegistersRequest(
+												enderecoIni, registros);
+								
+										ModbusTCPTransaction trans = new ModbusTCPTransaction(con);
+										trans.setRequest(request);
+										trans.execute();
+										WriteMultipleRegistersResponse response = new WriteMultipleRegistersResponse();
+										response = (WriteMultipleRegistersResponse) trans.getResponse();
+										System.out.println(valorOrig + " Written:" + response.getHexMessage() + "WordCount:"
+												+ response.getWordCount());
+										
+									} catch (Exception e) {
+										System.out.println("Error: Writing the values R1");
+									}
+								} else if (registros.length == 2) {//2 registro 2 words
+									byte[] valorB = null;
+									float valorX = 0.0f;
+									valores[i] = valores[i].replaceAll("[^0-9.-]", "");//remove caracteres
 
-								if(configuracoes[i].getOrdemBytes().equals("F")) {
-									valorX = Float.parseFloat(valores[i]);
-									//passa pra bytes
-									valorB = Utils.getBytesFromFloat((float)valorX, false);
-									//divide em 2 registros
-									registros[0] = new SimpleRegister(valorB[2],valorB[3]);
-									registros[1] = new SimpleRegister(valorB[0],valorB[1]);
-								}else if(configuracoes[i].getOrdemBytes().equals("B")) {
-									valorX = Float.parseFloat(valores[i]);
-									//passa pra bytes
-									valorB = Utils.getBytesFromFloat((float)valorX, true);
-									//divide em 2 registros
-									registros[0] = new SimpleRegister(valorB[0],valorB[1]);
-									registros[1] = new SimpleRegister(valorB[2],valorB[3]);
-								}else if(configuracoes[i].getOrdemBytes().equals("A")) {
-									valorX = Float.parseFloat(valores[i]);
-									//passa pra bytes
-									valorB = Utils.getBytesFromFloat((float)valorX, false);
-									//divide em 2 registros
-									registros[0] = new SimpleRegister(valorB[0],valorB[1]);
-									registros[1] = new SimpleRegister(valorB[2],valorB[3]);
-								}else if(configuracoes[i].getOrdemBytes().equals("C")) {
-									valorX = Float.parseFloat(valores[i]);
-									//passa pra bytes
-									valorB = Utils.getBytesFromFloat((float)valorX, true);
-									//divide em 2 registros
-									registros[0] = new SimpleRegister(valorB[2],valorB[3]);
-									registros[1] = new SimpleRegister(valorB[0],valorB[1]);
-								}else if(configuracoes[i].getOrdemBytes().equals("D")) {
-									valorX = Float.parseFloat(valores[i]);
-									//passa pra bytes
-									valorB = Utils.getBytesFromFloat((float)valorX, false);
-									//divide em 2 registros
-									registros[0] = new SimpleRegister(valorB[0],valorB[1]);
-									registros[1] = new SimpleRegister(valorB[2],valorB[3]);
-								}else if(configuracoes[i].getOrdemBytes().equals("E")) {
-									valorX = Float.parseFloat(valores[i]);
-									//passa pra bytes
-									valorB = Utils.getBytesFromFloat((float)valorX, false);
-									//divide em 2 registros
-									registros[0] = new SimpleRegister(valorB[3],valorB[2]);
-									registros[1] = new SimpleRegister(valorB[1],valorB[0]);
-								}else if(configuracoes[i].getOrdemBytes().equals("G")) {
-									valorX = Float.parseFloat(valores[i]);
-									//passa pra bytes
-									valorB = Utils.getBytesFromFloat((float)valorX, true);
-									//divide em 2 registros
-									registros[0] = new SimpleRegister(valorB[3],valorB[2]);
-									registros[1] = new SimpleRegister(valorB[1],valorB[0]);
-								}
+									if (configuracoes[i].getOrdemBytes().equals("F")) {
+										valorX = Float.parseFloat(valores[i]);
+										//passa pra bytes
+										valorB = Utils.getBytesFromFloat((float) valorX, false);
+										//divide em 2 registros
+										registros[0] = new SimpleRegister(valorB[2], valorB[3]);
+										registros[1] = new SimpleRegister(valorB[0], valorB[1]);
+									} else if (configuracoes[i].getOrdemBytes().equals("B")) {
+										valorX = Float.parseFloat(valores[i]);
+										//passa pra bytes
+										valorB = Utils.getBytesFromFloat((float) valorX, true);
+										//divide em 2 registros
+										registros[0] = new SimpleRegister(valorB[0], valorB[1]);
+										registros[1] = new SimpleRegister(valorB[2], valorB[3]);
+									} else if (configuracoes[i].getOrdemBytes().equals("A")) {
+										valorX = Float.parseFloat(valores[i]);
+										//passa pra bytes
+										valorB = Utils.getBytesFromFloat((float) valorX, false);
+										//divide em 2 registros
+										registros[0] = new SimpleRegister(valorB[0], valorB[1]);
+										registros[1] = new SimpleRegister(valorB[2], valorB[3]);
+									} else if (configuracoes[i].getOrdemBytes().equals("C")) {
+										valorX = Float.parseFloat(valores[i]);
+										//passa pra bytes
+										valorB = Utils.getBytesFromFloat((float) valorX, true);
+										//divide em 2 registros
+										registros[0] = new SimpleRegister(valorB[2], valorB[3]);
+										registros[1] = new SimpleRegister(valorB[0], valorB[1]);
+									} else if (configuracoes[i].getOrdemBytes().equals("D")) {
+										valorX = Float.parseFloat(valores[i]);
+										//passa pra bytes
+										valorB = Utils.getBytesFromFloat((float) valorX, false);
+										//divide em 2 registros
+										registros[0] = new SimpleRegister(valorB[0], valorB[1]);
+										registros[1] = new SimpleRegister(valorB[2], valorB[3]);
+									} else if (configuracoes[i].getOrdemBytes().equals("E")) {
+										valorX = Float.parseFloat(valores[i]);
+										//passa pra bytes
+										valorB = Utils.getBytesFromFloat((float) valorX, false);
+										//divide em 2 registros
+										registros[0] = new SimpleRegister(valorB[3], valorB[2]);
+										registros[1] = new SimpleRegister(valorB[1], valorB[0]);
+									} else if (configuracoes[i].getOrdemBytes().equals("G")) {
+										valorX = Float.parseFloat(valores[i]);
+										//passa pra bytes
+										valorB = Utils.getBytesFromFloat((float) valorX, true);
+										//divide em 2 registros
+										registros[0] = new SimpleRegister(valorB[3], valorB[2]);
+										registros[1] = new SimpleRegister(valorB[1], valorB[0]);
+									}
 
-								//cria o request
-								try {
-									WriteMultipleRegistersRequest request = new WriteMultipleRegistersRequest(enderecoIni,registros);
-									//System.out.println("request: "+request.getHexMessage());
-									ModbusTCPTransaction trans = new ModbusTCPTransaction(con);
-									trans.setRequest(request);
-									trans.execute();
-									WriteMultipleRegistersResponse response = new WriteMultipleRegistersResponse();
-									response = (WriteMultipleRegistersResponse) trans.getResponse();
-									System.out.println("Written:"+response.getHexMessage() + "WordCount:"+response.getWordCount());
-								} catch (Exception e) {
-									System.out.println("Error: Writing the values");
-								}
+									//cria o request
+									try {
+										WriteMultipleRegistersRequest request = new WriteMultipleRegistersRequest(enderecoIni, registros);
+										//System.out.println("request: "+request.getHexMessage());
+										ModbusTCPTransaction trans = new ModbusTCPTransaction(con);
+										trans.setRequest(request);
+										trans.execute();
+										WriteMultipleRegistersResponse response = new WriteMultipleRegistersResponse();
+										response = (WriteMultipleRegistersResponse) trans.getResponse();
+										System.out.println(valorOrig + " Written:" + response.getHexMessage() + "WordCount:"
+												+ response.getWordCount());
+									} catch (Exception e) {
+										System.out.println("Error: Writing the values R2");
+									}
 
-							}
+								}
+							} 
+						} catch (Exception e) {
+							StackTraceElement l = e.getStackTrace()[0];
+							String erro = l.getClassName()+"/"+l.getMethodName()+":"+l.getLineNumber()+" "+l.getFileName()+e.getMessage() +""+ e.getStackTrace();
+							Utils.escreveTxt("modbusClienteErroTratandoEnviando.txt","\n"+Utils.pegarData2()+" "+Utils.pegarHora() + " " +erro+"", true);
+							System.out.println("Error: Individual Handingle the data:"+valorOrig+" "+configuracoes[i].toString());
 						}
 					}
 				}
@@ -242,51 +257,63 @@ public class Principal {
 				spi = new SimpleProcessImage();
 				
 				for (int i = 0; i < valores.length; i++) {
-					System.out.println("value "+i+":"+valores[i]);
-					Register[] registros = new Register[configuracoes[i].getQtdReg()];
-					if(registros.length==1) {//1 registro uma WORD inteiro direto
-						//tratando casas
-						int qtdeCasas=0;
-						int mult=1;
-						int valorEnv=0;
-						double valorEnD=0.0d;
-						valores[i]=valores[i].replaceAll("[^0-9.-]", "");
-						if(valores[i].contains(".")) {
-							qtdeCasas = valores[i].substring(valores[i].lastIndexOf(".") + 1).length();
-							if(qtdeCasas==1)mult=10;
-							if(qtdeCasas==2)mult=100;
-							if(qtdeCasas==3)mult=1000;
-							valorEnD = Double.parseDouble(valores[i]);
-							valorEnD = valorEnD*mult;
-							valorEnv=(int) valorEnD;
-						}else {
-							valorEnv=Integer.parseInt(valores[i]);
-						}
-						registros[0] = new SimpleRegister(valorEnv);
-						spi.addRegister(registros[0]);
-					}else if(registros.length==2) {//2 registro 2 words
-						byte[] valorB = null;
-						float valorX=0.0f;
-						valores[i]=valores[i].replaceAll("[^0-9.-]", "");//remove caracteres
+					String valorOrig=valores[i] ;
+					try {
+						System.out.println("value " + i + ":" + valores[i]);
+						Register[] registros = new Register[configuracoes[i].getQtdReg()];
+						if (registros.length == 1) {//1 registro uma WORD inteiro direto
+							//tratando casas
+							int qtdeCasas = 0;
+							int mult = 1;
+							int valorEnv = 0;
+							double valorEnD = 0.0d;
+							valores[i] = valores[i].replaceAll("[^0-9.-]", "");
+							if (valores[i].contains(".")) {
+								qtdeCasas = valores[i].substring(valores[i].lastIndexOf(".") + 1).length();
+								if (qtdeCasas == 1)
+									mult = 10;
+								if (qtdeCasas == 2)
+									mult = 100;
+								if (qtdeCasas == 3)
+									mult = 1000;
+								valorEnD = Double.parseDouble(valores[i]);
+								valorEnD = valorEnD * mult;
+								valorEnv = (int) valorEnD;
+							} else {
+								valorEnv = Integer.parseInt(valores[i]);
+							}
+							registros[0] = new SimpleRegister(valorEnv);
+							spi.addRegister(registros[0]);
+						} else if (registros.length == 2) {//2 registro 2 words
+							byte[] valorB = null;
+							float valorX = 0.0f;
+							valores[i] = valores[i].replaceAll("[^0-9.-]", "");//remove caracteres
 
-						if(configuracoes[i].getOrdemBytes().equals("F")) {
-							valorX = Float.parseFloat(valores[i]);
-							//passa pra bytes
-							valorB = Utils.getBytesFromFloat((float)valorX, false);
-							//divide em 2 registros
-							registros[0] = new SimpleRegister(valorB[2],valorB[3]);
-							registros[1] = new SimpleRegister(valorB[0],valorB[1]);
+							if (configuracoes[i].getOrdemBytes().equals("F")) {
+								valorX = Float.parseFloat(valores[i]);
+								//passa pra bytes
+								valorB = Utils.getBytesFromFloat((float) valorX, false);
+								//divide em 2 registros
+								registros[0] = new SimpleRegister(valorB[2], valorB[3]);
+								registros[1] = new SimpleRegister(valorB[0], valorB[1]);
 
-						}else if(configuracoes[i].getOrdemBytes().equals("B")) {
-							valorX = Float.parseFloat(valores[i]);
-							//passa pra bytes
-							valorB = Utils.getBytesFromFloat((float)valorX, true);
-							//divide em 2 registros
-							registros[0] = new SimpleRegister(valorB[0],valorB[1]);
-							registros[1] = new SimpleRegister(valorB[2],valorB[3]);
-						}
-						spi.addRegister(registros[0]);
-						spi.addRegister(registros[1]);
+							} else if (configuracoes[i].getOrdemBytes().equals("B")) {
+								valorX = Float.parseFloat(valores[i]);
+								//passa pra bytes
+								valorB = Utils.getBytesFromFloat((float) valorX, true);
+								//divide em 2 registros
+								registros[0] = new SimpleRegister(valorB[0], valorB[1]);
+								registros[1] = new SimpleRegister(valorB[2], valorB[3]);
+							}
+							spi.addRegister(registros[0]);
+							spi.addRegister(registros[1]);
+						} 
+					} catch (Exception e) {
+						StackTraceElement l = e.getStackTrace()[0];
+						String erro = l.getClassName()+"/"+l.getMethodName()+":"+l.getLineNumber()+" "+l.getFileName()+e.getMessage() +""+ e.getStackTrace();
+						Utils.escreveTxt("modbusClienteErroTratandoEnviando.txt","\n"+Utils.pegarData2()+" "+Utils.pegarHora() + " " +erro+"", true);
+						System.out.println("Error: Individual Handingle the data:"+valorOrig+" "+configuracoes[i].toString());
+					
 					}
 				}
 
